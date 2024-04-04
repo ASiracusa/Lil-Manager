@@ -66,17 +66,4 @@ client.on("messageCreate", (message) => {
 
 });
 
-async function testFunc (reg_name) {
-
-  await new Promise((resolve, reject) => {
-    db_conn.query('INSERT INTO Players (guild_id, duser_id, reg_name, drole) VALUES (?, ?, ?, ?)', [reg_name.length, 1, reg_name, 1], (error, results, fields) => {
-        if (error) reject(error);
-        else resolve(results);
-    });
-  });
-
-
-}
-
-console.log(process.env.TOKEN.length);
 client.login(process.env.TOKEN);

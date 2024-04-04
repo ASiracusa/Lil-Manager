@@ -36,7 +36,7 @@ CREATE TABLE Characters (
 	guild_id VARCHAR(20) NOT NULL,
     abbr VARCHAR(10) NOT NULL,
     duser_id VARCHAR(20) NOT NULL,
-    camp_name VARCHAR(64) NOT NULL,
+    char_name VARCHAR(64) NOT NULL,
     char_role VARCHAR(20) NOT NULL,
 
     PRIMARY KEY (guild_id, abbr, duser_id)

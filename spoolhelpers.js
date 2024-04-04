@@ -20,6 +20,10 @@ const commandInfo = {
     "count": 3,
     "checks": [
       {
+        "function": pcheckMaxlen,
+        "params": [2, 12]
+      },
+      {
         "function": pcheckHex,
         "params": [3]
       }
@@ -30,14 +34,28 @@ const commandInfo = {
   "~unregister": {
     "syntax": "~unregister [REGISTERED NAME]",
     "count": 1,
-    "checks": [],
+    "checks": [
+      {
+        "function": pcheckMaxlen,
+        "params": [1, 12]
+      }
+    ],
     "function": sf.unregister,
     "description": "Unregisters a person from the database."
   },
   "~rnp": {
     "syntax": "~rnp [REGISTERED NAME] [NEW NAME]",
     "count": 2,
-    "checks": [],
+    "checks": [
+      {
+        "function": pcheckMaxlen,
+        "params": [1, 12]
+      },
+      {
+        "function": pcheckMaxlen,
+        "params": [2, 12]
+      }
+    ],
     "function": sf.rnp,
     "description": "Renames a registered person."
   },
@@ -45,6 +63,10 @@ const commandInfo = {
     "syntax": "~rcp [REGISTERED NAME] [NEW HEX CODE]",
     "count": 2,
     "checks": [
+      {
+        "function": pcheckMaxlen,
+        "params": [1, 12]
+      },
       {
         "function": pcheckHex,
         "params": [2]
@@ -65,8 +87,20 @@ const commandInfo = {
     "count": 5,
     "checks": [
       {
+        "function": pcheckMaxlen,
+        "params": [1, 64]
+      },
+      {
+        "function": pcheckMaxlen,
+        "params": [2, 10]
+      },
+      {
         "function": pcheckHex,
         "params": [3]
+      },
+      {
+        "function": pcheckMaxlen,
+        "params": [4, 12]
       },
       {
         "function": pcheckHex,
@@ -79,7 +113,12 @@ const commandInfo = {
   "~delcamp": {
     "syntax": "~delcamp [CAMPAIGN ABBR]",
     "count": 1,
-    "checks": [],
+    "checks": [
+      {
+        "function": pcheckMaxlen,
+        "params": [1, 10]
+      }
+    ],
     "function": sf.delcamp,
     "description": "Deletes a campaign and all of its characters. This command can only be executed by its GM or the server owner."
   },
@@ -95,6 +134,18 @@ const commandInfo = {
     "count": 4,
     "checks": [
       {
+        "function": pcheckMaxlen,
+        "params": [1, 10]
+      },
+      {
+        "function": pcheckMaxlen,
+        "params": [2, 12]
+      },
+      {
+        "function": pcheckMaxlen,
+        "params": [3, 17]
+      },
+      {
         "function": pcheckHex,
         "params": [4]
       }
@@ -105,14 +156,28 @@ const commandInfo = {
   "~delchar": {
     "syntax": "~delchar [CAMPAIGN ABBR] [CHARACTER'S NAME]",
     "count": 2,
-    "checks": [],
+    "checks": [
+      {
+        "function": pcheckMaxlen,
+        "params": [1, 10]
+      },
+      {
+        "function": pcheckMaxlen,
+        "params": [2, 17]
+      }
+    ],
     "function": sf.delchar,
     "description": "Deletes a character from a campaign."
   },
   "~lchars": {
     "syntax": "~lchars [CAMPAIGN ABBR]",
     "count": 1,
-    "checks": [],
+    "checks": [
+      {
+        "function": pcheckMaxlen,
+        "params": [1, 10]
+      }
+    ],
     "function": sf.lchars,
     "description": "Lists all characters and their players for a campaign."
   },
@@ -145,11 +210,18 @@ function pcheckHex (message, params, cparams) {
   return false;
 }
 
-
+function pcheckMaxlen (message, params, cparams) {
+  if (params[cparams[0]].length > cparams[1]) {
+    message.channel.send("Argument " + cparams[0] + " must be " + cparams[1] + " characters or less.\n`" + commandInfo[params[0]]["syntax"] + "`");
+    return true;
+  }
+  return false;
+}
 
 module.exports = {
   commandInfo,
   help,
   pcheckCount,
-  pcheckHex
+  pcheckHex,
+  pcheckMaxlen
 };

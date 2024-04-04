@@ -95,10 +95,59 @@ async function renamePlayer (db, gid, pid, newName) {
 
 }
 
+async function getCampWithAbbr (db, gid, abbr) {
+
+  const query = 'SELECT * FROM Campaigns WHERE guild_id=? AND abbr=?';
+  return await queryDB(db, query, [gid, abbr]);
+
+}
+
 async function createCamp (db, gid, abbr, campName, gmid, cRole, gRole) {
 
   const query = 'INSERT INTO Campaigns VALUES (?, ?, ?, ?, ?, ?)';
   return await queryDB(db, query, [gid, abbr, campName, gmid, cRole, gRole]);
+
+}
+
+async function deleteCamp (db, gid, abbr) {
+
+  const query = 'DELETE FROM Campaigns WHERE guild_id=? AND abbr=?';
+  return await queryDB(db, query, [gid, abbr]);
+
+}
+
+async function renameCamp (db, gid, abbr, newName) {
+
+  const query = 'UPDATE Campaigns SET camp_name=? WHERE guild_id=? AND abbr=?';
+  return await queryDB(db, query, [newName, gid, abbr]);
+
+}
+
+async function createChar (db, gid, abbr, pid, charName, hRole) {
+
+  const query = 'INSERT INTO Characters VALUES (?, ?, ?, ?, ?)';
+  return await queryDB(db, query, [gid, abbr, pid, charName, hRole]);
+
+}
+
+async function deleteChar (db, gid, abbr, charName) {
+
+  const query = 'DELETE FROM Characters WHERE guild_id=? AND abbr=? AND char_name=?';
+  return await queryDB(db, query, [gid, abbr, charName]);
+
+}
+
+async function getCharWithName (db, gid, abbr, charName) {
+
+  const query = 'SELECT * FROM Characters WHERE guild_id=? AND abbr=? AND char_name=?';
+  return await queryDB(db, query, [gid, abbr, charName]);
+
+}
+
+async function getCharWithId (db, gid, abbr, pid) {
+
+  const query = 'SELECT * FROM Characters WHERE guild_id=? AND abbr=? AND duser_id=?';
+  return await queryDB(db, query, [gid, abbr, pid]);
 
 }
 
@@ -114,5 +163,12 @@ module.exports = {
   createPlayer,
   deletePlayer,
   renamePlayer,
-  createCamp
+  getCampWithAbbr,
+  createCamp,
+  deleteCamp,
+  renameCamp,
+  createChar,
+  deleteChar,
+  getCharWithName,
+  getCharWithId
 };
