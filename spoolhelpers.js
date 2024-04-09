@@ -20,6 +20,10 @@ const commandInfo = {
     "count": 3,
     "checks": [
       {
+        "function": pcheckDuser,
+        "params": [1]
+      },
+      {
         "function": pcheckMaxlen,
         "params": [2, 12]
       },
@@ -210,6 +214,14 @@ function pcheckHex (message, params, cparams) {
   return false;
 }
 
+function pcheckDuser (message, params, cparams) {
+  if (!/^<@[0-9]+>$/.test(params[cparams[0]])) {
+    message.channel.send("Argument " + cparams[0] + " is not a valid Discord user ping.\n`" + commandInfo[params[0]]["syntax"] + "`");
+    return true;
+  }
+  return false;
+}
+
 function pcheckMaxlen (message, params, cparams) {
   if (params[cparams[0]].length > cparams[1]) {
     message.channel.send("Argument " + cparams[0] + " must be " + cparams[1] + " characters or less.\n`" + commandInfo[params[0]]["syntax"] + "`");
@@ -223,5 +235,6 @@ module.exports = {
   help,
   pcheckCount,
   pcheckHex,
+  pcheckDuser,
   pcheckMaxlen
 };

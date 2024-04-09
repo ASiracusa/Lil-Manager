@@ -5,11 +5,49 @@ async function reset (message, params, db) {
   try {
 
     var gid = message.guild.id;
-    const guildData = await sd.getGuildData(db, gid); 
+    var guildData = await sd.getGuildData(db, gid); 
+
+    if (!checkOwnerRights(message)) return;
     
     if (guildData.length > 0) {
 
+      guildData = guildData[0];
 
+      const charsData = await sd.getAllChars(db, gid);
+      charsData.forEach((charRow) => {
+        message.guild.roles.fetch(charRow.char_role).then((role) => {
+          message.guild.roles.delete(role);
+        });
+      });
+
+      const campsData = await sd.getCamps(db, gid);
+      campsData.forEach((campRow) => {
+        message.guild.roles.fetch(campRow.camp_role).then((role) => {
+          message.guild.roles.delete(role);
+        });
+        message.guild.roles.fetch(campRow.gm_role).then((role) => {
+          message.guild.roles.delete(role);
+        });
+      });
+
+      const playersData = await sd.getPlayers(db, gid);
+      playersData.forEach((playerRow) => {
+        message.guild.roles.fetch(playerRow.player_role).then((role) => {
+          message.guild.roles.delete(role);
+        });
+      });
+
+      message.guild.roles.fetch(guildData.players_role).then((role) => {
+        message.guild.roles.delete(role);
+      });
+      message.guild.roles.fetch(guildData.camps_role).then((role) => {
+        message.guild.roles.delete(role);
+      });
+      message.guild.roles.fetch(guildData.gms_role).then((role) => {
+        message.guild.roles.delete(role);
+      });
+
+      await sd.removeGuild(db, gid);
 
     }
 
@@ -51,25 +89,34 @@ async function register (message, params, db) {
     const guildData = await dcheckGuild(message, db, gid); if (!guildData) return;
 
     var playerId = params[1].substring(2, params[1].length - 1);
-    var playerUser = message.guild.members.cache.get(playerId);
     var playerName = params[2].split("_").join(" ");
   
     if (!(await dcheckPlayerId(message, db, gid, playerId, true))) return;
     if (!(await dcheckPlayerName(message, db, gid, playerName, true))) return;
     
-    var playerRole = message.guild.roles.cache.find(role => role.id === guildData.players_role);
-    playerUser.roles.add(playerRole);
-    message.guild.roles.create({
-      name: playerName,
-      color: params[3],
-      hoist: false
-    }).then((playersRole) => {
-      playerUser.roles.add(playersRole);
-      playersRole.edit({ position: playerRole.position-1 });
-      
-      sd.createPlayer(db, gid, playerId, playerName, playersRole.id);
+    message.guild.members.fetch(playerId).then((playerUser) => {
 
-      message.channel.send("Registered **" + playerName + "**.");
+      message.guild.roles.create({
+        name: playerName,
+        color: params[3],
+        hoist: false
+      }).then((playersRole) => {
+        playersRole.edit({ position: playerRole.position-1 });
+        playerUser.edit({nick: playerName});
+
+        message.guild.roles.fetch(guildData.players_role).then((playerRole) => {
+          playerUser.roles.add(playerRole);
+          playerUser.roles.add(playersRole);
+        });
+        
+        sd.createPlayer(db, gid, playerId, playerName, playersRole.id);
+
+        message.channel.send("Registered **" + playerName + "**.");
+      });
+
+    }).catch(() => {
+      message.channel.send("That Discord user is not a member of this server.");
+      return;
     });
 
   } catch (error) {
@@ -88,12 +135,18 @@ async function unregister (message, params, db) {
     var playerName = params[1].split("_").join(" ");
     const playerData = await dcheckPlayerName(message, db, gid, playerName, false); if (!playerData) return;
 
-    var playerUser = message.guild.members.cache.get(playerData.duser_id);
-    playerUser.roles.remove(message.guild.roles.cache.find(role => role.id === guildData.players_role));
-    message.guild.roles.delete(message.guild.roles.cache.find(role => role.id === playerData.player_role));
-    await sd.deletePlayer(db, gid, playerData.duser_id);
-    
-    message.channel.send("Unregistered **" + playerName + "**.");
+    message.guild.members.fetch(playerData.duser_id).then((playerUser) => {
+      message.guild.roles.fetch(guildData.players_role).then((role) => {
+        playerUser.roles.remove(role);
+      });
+      message.guild.roles.fetch(playerData.player_role).then((role) => {
+        message.guild.roles.delete(role);
+      });
+
+      sd.deletePlayer(db, gid, playerData.duser_id);
+      
+      message.channel.send("Unregistered **" + playerName + "**.");
+    });
 
   } catch (error) {
     console.error('ERROR IN ~unregister:', error);
@@ -159,7 +212,7 @@ async function lp (message, params, db) {
       var playerListMessage = "The players are:";
       playersData.forEach((playerRow) => {
         var playerUser = message.guild.members.cache.get(playerRow.duser_id);
-        playerListMessage = playerListMessage + "\n> " + playerUser.user.username + " (" + playerRow.reg_name + ")";
+        playerListMessage = playerListMessage + "\n> " + playerRow.reg_name + " (" + playerUser.user.username + ")";
       });
       message.channel.send(playerListMessage);
     }
@@ -189,23 +242,24 @@ async function addcamp (message, params, db) {
       color: params[5],
       hoist: false
     }).then((gmsRole) => {
-      var gmUser = message.guild.members.cache.get(gmData.duser_id);
-      gmUser.roles.add(gmsRole);
-      var gmRole = message.guild.roles.cache.find(role => role.id === guildData.gms_role);
-      gmsRole.edit({ position: gmRole.position-1 });
-      
-      message.guild.roles.create({
-        name: campName,
-        color: params[3],
-        hoist: false
-      }).then((campsRole) => {
-        gmUser.roles.add(campsRole);
-        var campRole = message.guild.roles.cache.find(role => role.id === guildData.camps_role);
-        campsRole.edit({ position: campRole.position-1 });
+      message.guild.members.fetch(gmData.duser_id).then((gmUser) => {
+        gmUser.roles.add(gmsRole);
+        var gmRole = message.guild.roles.cache.find(role => role.id === guildData.gms_role);
+        gmsRole.edit({ position: gmRole.position-1 });
+        
+        message.guild.roles.create({
+          name: campName,
+          color: params[3],
+          hoist: false
+        }).then((campsRole) => {
+          gmUser.roles.add(campsRole);
+          var campRole = message.guild.roles.cache.find(role => role.id === guildData.camps_role);
+          campsRole.edit({ position: campRole.position-1 });
 
-        sd.createCamp(db, gid, campAbbr, campName, gmData.duser_id, campsRole.id, gmsRole.id);
+          sd.createCamp(db, gid, campAbbr, campName, gmData.duser_id, campsRole.id, gmsRole.id);
 
-        message.channel.send("Created **" + campName + " (" + campAbbr + ")**.");
+          message.channel.send("Created **" + campName + " (" + campAbbr + ")**.");
+        });
       });
     });
 
@@ -225,10 +279,14 @@ async function delcamp (message, params, db) {
     var campAbbr = params[1].toLowerCase();
     const campData = await dcheckCampAbbr(message, db, gid, campAbbr, false); if (!campData) return;
     
-    if (!checkGmOrOwner(message, campData)) return;
+    if (!checkGmOrOwnerRights(message, campData)) return;
 
-    message.guild.roles.delete(message.guild.roles.cache.find(role => role.id === campData.camp_role));
-    message.guild.roles.delete(message.guild.roles.cache.find(role => role.id === campData.gm_role));
+    message.guild.roles.fetch(campData.camp_role).then((role) => {
+      message.guild.roles.delete(role);
+    });
+    message.guild.roles.fetch(campData.gm_role).then((role) => {
+      message.guild.roles.delete(role);
+    });
 
     await sd.deleteCamp(db, gid, campAbbr);
 
@@ -254,7 +312,7 @@ async function lcamps (message, params, db) {
       var campListMessage = "The campaigns are:";
       for (var c = 0; c < campsData.length; c++) {
         var campRow = campsData[c];
-        var gmName = (await sd.getPlayerWithId(campRow.gm_duser_id))[0].reg_name;
+        var gmName = (await sd.getPlayerWithId(db, gid, campRow.gm_duser_id))[0].reg_name;
         campListMessage = campListMessage + "\n> " + campRow.camp_name + " (" + campRow.abbr + ", ran by " + gmName + ")";
       }
       message.channel.send(campListMessage);
@@ -280,7 +338,7 @@ async function addchar (message, params, db) {
     var charName = params[3].split("_").join(" ");
     const playerData = await dcheckPlayerName(message, db, gid, playerName, false); if (!playerData) return;
 
-    if (!checkGm(message, campData, true)) return;
+    if (!checkGmOfCamp(message, campData, playerData.duser_id, true)) return;
     if (!(await dcheckCharId(message, db, gid, campAbbr, playerData.duser_id, true))) return;
     if (!(await dcheckCharName(message, db, gid, campAbbr, charName, true))) return;
 
@@ -290,15 +348,18 @@ async function addchar (message, params, db) {
       hoist: false
     }).then((charsRole) => {
       
-      var playerUser = message.guild.members.cache.get(playerData.duser_id);
-      playerUser.roles.add(charsRole);
-      var gmRole = message.guild.roles.cache.find(role => role.id === guildData.gms_role);
-      charsRole.edit({ position: gmRole.position+1 });
+      message.guild.members.fetch(playerData.duser_id).then((playerUser) => {
 
-      sd.createChar(db, gid, campData.abbr, pid, charName, charsRole.id);
+        playerUser.roles.add(charsRole);
+        var gmRole = message.guild.roles.cache.find(role => role.id === guildData.gms_role);
+        charsRole.edit({ position: gmRole.position });
 
-      message.channel.send("Created **" + charName + "**.");
-      
+        sd.createChar(db, gid, campData.abbr, playerData.duser_id, charName, charsRole.id);
+
+        message.channel.send("Created **" + charName + "**.");
+
+      });
+
     });
     
   } catch (error) {
@@ -351,7 +412,7 @@ async function lchars (message, params, db) {
       var charListMessage = "The characters in **" + campData.camp_name + "** are:";
       for (var c = 0; c < charsData.length; c++) {
         var charRow = charsData[c];
-        var playerName = (await sd.getPlayerWithId(charRow.duser_id))[0].reg_name;
+        var playerName = (await sd.getPlayerWithId(db, gid, charRow.duser_id))[0].reg_name;
         charListMessage = charListMessage + "\n> " + charRow.char_name + " (played by " + playerName + ")";
       }
       message.channel.send(charListMessage);
@@ -384,7 +445,7 @@ async function dcheckPlayerName (message, db, gid, playerName, failIfFound) {
     message.channel.send(failIfFound ? "That name is already being used." : "No one has that name.");
     return false;
   }
-  return playerData[0];
+  return failIfFound ? true : playerData[0];
 
 }
 
@@ -396,7 +457,7 @@ async function dcheckPlayerId (message, db, gid, playerId, failIfFound) {
     message.channel.send(failIfFound ? "That user is already registered." : "That user is not registered.");
     return false;
   }
-  return playerData[0];
+  return failIfFound ? true : playerData[0];
 
 }
 
@@ -408,7 +469,7 @@ async function dcheckCampAbbr (message, db, gid, abbr, failIfFound) {
     message.channel.send(failIfFound ? "That campaign abbreviation is already being used." : "That campaign does not exist.");
     return false;
   }
-  return campData[0];
+  return failIfFound ? true : campData[0];
 
 }
 
@@ -420,7 +481,7 @@ async function dcheckCharName (message, db, gid, abbr, charName, failIfFound) {
     message.channel.send(failIfFound ? "That character name is already being used." : "No one has that character name.");
     return false;
   }
-  return charData[0];
+  return failIfFound ? true : charData[0];
 
 }
 
@@ -432,13 +493,13 @@ async function dcheckCharId (message, db, gid, abbr, pid, failIfFound) {
     message.channel.send(failIfFound ? "That player already has a character in this campaign." : "That player is not in this campaign.");
     return false;
   }
-  return charData[0];
+  return failIfFound ? true : charData[0];
 
 }
 
 function checkCharRights (message, campData, charData) {
 
-  if (charData.duser_id === message.author.id || campData.gm_duser_id === message.author.id || message.guild.ownerId === message.author.id) {
+  if (!(charData.duser_id === message.author.id || campData.gm_duser_id === message.author.id || message.guild.ownerId === message.author.id)) {
     message.channel.send("You do not have access to modify that character.");
     return false;
   }
@@ -446,9 +507,9 @@ function checkCharRights (message, campData, charData) {
 
 }
 
-function checkGmOrOwner (message, campData) {
+function checkGmOrOwnerRights (message, campData) {
 
-  if (campData.gm_duser_id === message.author.id || message.guild.ownerId === message.author.id) {
+  if (!(campData.gm_duser_id === message.author.id || message.guild.ownerId === message.author.id)) {
     message.channel.send("You are not the GM of that campaign.");
     return false;
   }
@@ -456,10 +517,30 @@ function checkGmOrOwner (message, campData) {
 
 }
 
-function checkGm (message, campData, failIfFound) {
+function checkGmRights (message, campData, failIfFound) {
 
   if ((campData.gm_duser_id === message.author.id) === failIfFound) {
     message.channel.send(failIfFound ? "You are already the GM of that campaign." : "You are not the GM of that campaign.");
+    return false;
+  }
+  return true;
+
+}
+
+function checkGmOfCamp (message, campData, playerId, failIfFound) {
+
+  if ((campData.gm_duser_id === playerId) === failIfFound) {
+    message.channel.send(failIfFound ? "That user is already the GM of that campaign." : "That user is not the GM of that campaign.");
+    return false;
+  }
+  return true;
+
+}
+
+function checkOwnerRights (message) {
+
+  if (message.guild.ownerId !== message.author.id) {
+    message.channel.send("You are not the owner of this server.");
     return false;
   }
   return true;

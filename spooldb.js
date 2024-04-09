@@ -39,6 +39,13 @@ async function getCamps (db, gid) {
 
 }
 
+async function getAllChars (db, gid) {
+
+  const query = 'SELECT * FROM Characters WHERE guild_id=?';
+  return await queryDB(db, query, [gid]);
+
+}
+
 async function getChars (db, gid, abbr) {
 
   const query = 'SELECT * FROM Characters WHERE guild_id=? AND abbr=?';
@@ -48,7 +55,13 @@ async function getChars (db, gid, abbr) {
 
 async function removeGuild (db, gid) {
 
-  const query = 'DELETE FROM GuildData WHERE guild_id=?';
+  var query = 'DELETE FROM Characters WHERE guild_id=?';
+  await queryDB(db, query, [gid]);
+  query = 'DELETE FROM Campaigns WHERE guild_id=?';
+  await queryDB(db, query, [gid]);
+  query = 'DELETE FROM Players WHERE guild_id=?';
+  await queryDB(db, query, [gid]);
+  query = 'DELETE FROM GuildData WHERE guild_id=?';
   return await queryDB(db, query, [gid]);
 
 }
@@ -155,6 +168,7 @@ module.exports = {
   getGuildData,
   getPlayers,
   getCamps,
+  getAllChars,
   getChars,
   removeGuild,
   addGuild,

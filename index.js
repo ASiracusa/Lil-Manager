@@ -58,8 +58,6 @@ client.on("messageCreate", (message) => {
       if (check["function"](message, params, check["params"])) return;
     }
 
-    message.channel.send("Response!");
-
     command["function"](message, params, db_conn);
     
   }
