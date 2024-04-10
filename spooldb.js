@@ -39,6 +39,13 @@ async function getCamps (db, gid) {
 
 }
 
+async function getCampsByGm (db, gid, gmid) {
+
+  const query = 'SELECT * FROM Campaigns WHERE guild_id=? AND gm_duser_id=?';
+  return await queryDB(db, query, [gid, gmid]);
+
+}
+
 async function getAllChars (db, gid) {
 
   const query = 'SELECT * FROM Characters WHERE guild_id=?';
@@ -168,6 +175,7 @@ module.exports = {
   getGuildData,
   getPlayers,
   getCamps,
+  getCampsByGm,
   getAllChars,
   getChars,
   removeGuild,

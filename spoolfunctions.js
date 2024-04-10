@@ -12,40 +12,29 @@ async function reset (message, params, db) {
     if (guildData.length > 0) {
 
       guildData = guildData[0];
+      var rolesToDelete = [];
 
       const charsData = await sd.getAllChars(db, gid);
-      charsData.forEach((charRow) => {
-        message.guild.roles.fetch(charRow.char_role).then((role) => {
-          message.guild.roles.delete(role);
-        });
-      });
+      for (var i = 0; i < charsData.length; i++) {
+        rolesToDelete.push(charsData[i].char_role);
+      }
 
       const campsData = await sd.getCamps(db, gid);
-      campsData.forEach((campRow) => {
-        message.guild.roles.fetch(campRow.camp_role).then((role) => {
-          message.guild.roles.delete(role);
-        });
-        message.guild.roles.fetch(campRow.gm_role).then((role) => {
-          message.guild.roles.delete(role);
-        });
-      });
+      for (var i = 0; i < campsData.length; i++) {
+        rolesToDelete.push(campsData[i].camp_role);
+        rolesToDelete.push(campsData[i].gm_role);
+      }
 
       const playersData = await sd.getPlayers(db, gid);
-      playersData.forEach((playerRow) => {
-        message.guild.roles.fetch(playerRow.player_role).then((role) => {
-          message.guild.roles.delete(role);
-        });
-      });
+      for (var i = 0; i < playersData.length; i++) {
+        rolesToDelete.push(playersData[i].player_role);
+      }
 
-      message.guild.roles.fetch(guildData.players_role).then((role) => {
-        message.guild.roles.delete(role);
-      });
-      message.guild.roles.fetch(guildData.camps_role).then((role) => {
-        message.guild.roles.delete(role);
-      });
-      message.guild.roles.fetch(guildData.gms_role).then((role) => {
-        message.guild.roles.delete(role);
-      });
+      rolesToDelete.push(guildData.players_role);
+      rolesToDelete.push(guildData.camps_role);
+      rolesToDelete.push(guildData.gms_role);
+
+      await roleDeletionQueue(message, rolesToDelete, 0);
 
       await sd.removeGuild(db, gid);
 
@@ -101,12 +90,12 @@ async function register (message, params, db) {
         color: params[3],
         hoist: false
       }).then((playersRole) => {
-        playersRole.edit({ position: playerRole.position-1 });
-        playerUser.edit({nick: playerName});
-
         message.guild.roles.fetch(guildData.players_role).then((playerRole) => {
-          playerUser.roles.add(playerRole);
-          playerUser.roles.add(playersRole);
+          playersRole.edit({ position: playerRole.position-1 }).then(() => {
+          playerUser.edit({nick: playerName}).then(() => {
+          playerUser.roles.add(playerRole).then(() => {
+          playerUser.roles.add(playersRole).then(() => {
+          }) }) }) });
         });
         
         sd.createPlayer(db, gid, playerId, playerName, playersRole.id);
@@ -135,12 +124,15 @@ async function unregister (message, params, db) {
     var playerName = params[1].split("_").join(" ");
     const playerData = await dcheckPlayerName(message, db, gid, playerName, false); if (!playerData) return;
 
+    if (!(await dcheckGmOfAny(message, db, gid, playerData.duser_id, true))) return;
+
     message.guild.members.fetch(playerData.duser_id).then((playerUser) => {
       message.guild.roles.fetch(guildData.players_role).then((role) => {
-        playerUser.roles.remove(role);
-      });
-      message.guild.roles.fetch(playerData.player_role).then((role) => {
-        message.guild.roles.delete(role);
+        playerUser.roles.remove(role).then(() => {
+          message.guild.roles.fetch(playerData.player_role).then((role) => {
+            message.guild.roles.delete(role);
+          });
+        });
       });
 
       sd.deletePlayer(db, gid, playerData.duser_id);
@@ -166,8 +158,9 @@ async function rnp (message, params, db) {
     
     var newPlayerName = params[2].split("_").join(" ");
     await sd.renamePlayer(db, gid, playerData.duser_id, newPlayerName); 
-    var playersRole = message.guild.roles.cache.find(role => role.id === playerData.player_role);
-    playersRole.edit({ name: newPlayerName });
+    message.guild.roles.fetch(playerData.player_role).then((playersRole) => {
+      playersRole.edit({ name: newPlayerName });
+    });
     
     message.channel.send("Renamed player to **" + newPlayerName + "**.");
 
@@ -187,8 +180,9 @@ async function rcp (message, params, db) {
     var playerName = params[1].split("_").join(" ");
     const playerData = await dcheckPlayerName(message, db, gid, playerName, false); if (!playerData) return;
   
-    var playersRole = message.guild.roles.cache.find(role => role.id === playerData.player_role);
-    playersRole.edit({ color: params[2] });
+    message.guild.roles.fetch(playerData.player_role).then((playersRole) => {
+      playersRole.edit({ color: params[2] });
+    });
     
     message.channel.send("Recolored " + playerName + " to **" + params[2] + "**.");
 
@@ -280,13 +274,18 @@ async function delcamp (message, params, db) {
     const campData = await dcheckCampAbbr(message, db, gid, campAbbr, false); if (!campData) return;
     
     if (!checkGmOrOwnerRights(message, campData)) return;
+    
+    var rolesToDelete = [];
+    
+    rolesToDelete.push(campData.camp_role);
+    rolesToDelete.push(campData.gm_role);
 
-    message.guild.roles.fetch(campData.camp_role).then((role) => {
-      message.guild.roles.delete(role);
-    });
-    message.guild.roles.fetch(campData.gm_role).then((role) => {
-      message.guild.roles.delete(role);
-    });
+    const charsData = await sd.getChars(db, gid, campAbbr);
+    for (var i = 0; i < charsData.length; i++) {
+      rolesToDelete.push(charsData[i].char_role);
+    }
+
+    await roleDeletionQueue(message, rolesToDelete, 0);
 
     await sd.deleteCamp(db, gid, campAbbr);
 
@@ -494,6 +493,34 @@ async function dcheckCharId (message, db, gid, abbr, pid, failIfFound) {
     return false;
   }
   return failIfFound ? true : charData[0];
+
+}
+
+async function dcheckGmOfAny (message, db, gid, gmid, failIfFound) {
+
+  const campData = await sd.getCampsByGm(db, gid, gmid); 
+
+  if ((campData.length > 0) === failIfFound) {
+    message.channel.send(failIfFound ? "That player is a GM." : "That player is not a GM.");
+    return false;
+  }
+  return failIfFound ? true : campData;
+
+}
+
+async function roleDeletionQueue (message, roleList, i) {
+
+  console.log(roleList);
+
+  message.guild.roles.fetch(roleList[i]).then((role) => {
+    if (i === roleList.length - 1) {
+      message.guild.roles.delete(role);
+    } else {
+      message.guild.roles.delete(role).then(() => {
+        roleDeletionQueue(message, roleList, i+1);
+      });
+    }
+  });
 
 }
 
