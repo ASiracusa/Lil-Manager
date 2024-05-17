@@ -15,6 +15,25 @@ const commandInfo = {
     "function": sf.reset,
     "description": "Creates basic roles if needed and resets the database. This command can only be executed by the server owner. Do **NOT** run this command unless you specifically want to wipe everything."
   },
+  "~start": {
+    "syntax": "~start [CAMPAIGN ABBR]",
+    "count": 1,
+    "checks": [
+      {
+        "function": pcheckMaxlen,
+        "params": [1, 10]
+      }
+    ],
+    "function": sf.startSession,
+    "description": "Starts a session for the given campaign."
+  },
+  "~end": {
+    "syntax": "~end",
+    "count": 0,
+    "checks": [],
+    "function": sf.endSession,
+    "description": "Ends the currently running campaign."
+  },
   "~register": {
     "syntax": "~register [PING USER] [NAME TO REGISTER] [HEX CODE]",
     "count": 3,

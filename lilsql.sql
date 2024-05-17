@@ -13,6 +13,7 @@ CREATE TABLE Players (
 
 CREATE TABLE GuildData (
 	guild_id VARCHAR(20) NOT NULL,
+    top_role VARCHAR(20) NOT NULL,
     players_role VARCHAR(20) NOT NULL,
     gms_role VARCHAR(20) NOT NULL,
     camps_role VARCHAR(20) NOT NULL,

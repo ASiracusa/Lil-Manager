@@ -60,6 +60,13 @@ async function getChars (db, gid, abbr) {
 
 }
 
+async function getCharsOfPlayer (db, gid, pid) {
+
+  const query = 'SELECT * FROM Characters WHERE guild_id=? AND duser_id=?';
+  return await queryDB(db, query, [gid, pid]);
+
+}
+
 async function removeGuild (db, gid) {
 
   var query = 'DELETE FROM Characters WHERE guild_id=?';
@@ -73,10 +80,24 @@ async function removeGuild (db, gid) {
 
 }
 
-async function addGuild (db, gid, pRole, gRole, cRole) {
+async function addGuild (db, gid, tRole, pRole, gRole, cRole) {
 
-  const query = 'INSERT INTO GuildData VALUES (?, ?, ?, ?, NULL)';
-  return await queryDB(db, query, [gid, pRole, gRole, cRole]);
+  const query = 'INSERT INTO GuildData VALUES (?, ?, ?, ?, ?, NULL)';
+  return await queryDB(db, query, [gid, tRole, pRole, gRole, cRole]);
+
+}
+
+async function startSession (db, gid, campAbbr) {
+
+  const query = 'UPDATE GuildData SET camp_abbr=? WHERE guild_id=?';
+  return await queryDB(db, query, [campAbbr, gid]);
+
+}
+
+async function endSession (db, gid) {
+
+  const query = 'UPDATE GuildData SET camp_abbr=NULL WHERE guild_id=?';
+  return await queryDB(db, query, [gid]);
 
 }
 
@@ -103,7 +124,9 @@ async function createPlayer (db, gid, pid, playerName, pRole) {
 
 async function deletePlayer (db, gid, pid) {
 
-  const query = 'DELETE FROM Players WHERE guild_id=? AND duser_id=?';
+  var query = 'DELETE FROM Characters WHERE guild_id=? AND duser_id=?';
+  await queryDB(db, query, [gid, pid]);
+  query = 'DELETE FROM Players WHERE guild_id=? AND duser_id=?';
   return await queryDB(db, query, [gid, pid]);
 
 }
@@ -131,7 +154,9 @@ async function createCamp (db, gid, abbr, campName, gmid, cRole, gRole) {
 
 async function deleteCamp (db, gid, abbr) {
 
-  const query = 'DELETE FROM Campaigns WHERE guild_id=? AND abbr=?';
+  var query = 'DELETE FROM Characters WHERE guild_id=? AND abbr=?';
+  await queryDB(db, query, [gid, abbr]);
+  query = 'DELETE FROM Campaigns WHERE guild_id=? AND abbr=?';
   return await queryDB(db, query, [gid, abbr]);
 
 }
@@ -178,6 +203,9 @@ module.exports = {
   getCampsByGm,
   getAllChars,
   getChars,
+  getCharsOfPlayer,
+  startSession,
+  endSession,
   removeGuild,
   addGuild,
   getPlayerWithName,
