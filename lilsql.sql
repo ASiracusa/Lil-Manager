@@ -6,6 +6,7 @@ CREATE TABLE Players (
 	guild_id VARCHAR(20) NOT NULL,
     duser_id VARCHAR(20) NOT NULL,
     reg_name VARCHAR(12) NOT NULL,
+    player_color CHAR(7) NOT NULL,
     player_role VARCHAR(20) NOT NULL,
 
     PRIMARY KEY (guild_id, duser_id)
@@ -13,7 +14,7 @@ CREATE TABLE Players (
 
 CREATE TABLE GuildData (
 	guild_id VARCHAR(20) NOT NULL,
-    top_role VARCHAR(20) NOT NULL,
+    costume_role VARCHAR(20) NOT NULL,
     players_role VARCHAR(20) NOT NULL,
     gms_role VARCHAR(20) NOT NULL,
     camps_role VARCHAR(20) NOT NULL,
@@ -38,6 +39,7 @@ CREATE TABLE Characters (
     abbr VARCHAR(10) NOT NULL,
     duser_id VARCHAR(20) NOT NULL,
     char_name VARCHAR(64) NOT NULL,
+    char_color CHAR(7) NOT NULL,
     char_role VARCHAR(20) NOT NULL,
 
     PRIMARY KEY (guild_id, abbr, duser_id)

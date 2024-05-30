@@ -115,10 +115,10 @@ async function getPlayerWithId (db, gid, pid) {
 
 }
 
-async function createPlayer (db, gid, pid, playerName, pRole) {
+async function createPlayer (db, gid, pid, playerName, pColor, pRole) {
 
-  const query = 'INSERT INTO Players VALUES (?, ?, ?, ?)';
-  return await queryDB(db, query, [gid, pid, playerName, pRole]);
+  const query = 'INSERT INTO Players VALUES (?, ?, ?, ?, ?)';
+  return await queryDB(db, query, [gid, pid, playerName, pColor, pRole]);
 
 }
 
@@ -135,6 +135,13 @@ async function renamePlayer (db, gid, pid, newName) {
 
   const query = 'UPDATE Players SET reg_name=? WHERE guild_id=? AND duser_id=?';
   return await queryDB(db, query, [newName, gid, pid]);
+
+}
+
+async function recolorPlayer (db, gid, pid, newColor) {
+
+  const query = 'UPDATE Players SET player_color=? WHERE guild_id=? AND duser_id=?';
+  return await queryDB(db, query, [newColor, gid, pid]);
 
 }
 
@@ -168,10 +175,10 @@ async function renameCamp (db, gid, abbr, newName) {
 
 }
 
-async function createChar (db, gid, abbr, pid, charName, hRole) {
+async function createChar (db, gid, abbr, pid, charName, hColor, hRole) {
 
-  const query = 'INSERT INTO Characters VALUES (?, ?, ?, ?, ?)';
-  return await queryDB(db, query, [gid, abbr, pid, charName, hRole]);
+  const query = 'INSERT INTO Characters VALUES (?, ?, ?, ?, ?, ?)';
+  return await queryDB(db, query, [gid, abbr, pid, charName, hColor, hRole]);
 
 }
 
@@ -179,6 +186,20 @@ async function deleteChar (db, gid, abbr, charName) {
 
   const query = 'DELETE FROM Characters WHERE guild_id=? AND abbr=? AND char_name=?';
   return await queryDB(db, query, [gid, abbr, charName]);
+
+}
+
+async function renameChar (db, gid, abbr, pid, newName) {
+
+  const query = 'UPDATE Characters SET char_name=? WHERE guild_id=? AND abbr=? AND duser_id=?';
+  return await queryDB(db, query, [newName, gid, abbr, pid]);
+
+}
+
+async function recolorChar (db, gid, abbr, pid, newColor) {
+
+  const query = 'UPDATE Characters SET char_color=? WHERE guild_id=? AND abbr=? AND duser_id=?';
+  return await queryDB(db, query, [newColor, gid, abbr, pid]);
 
 }
 
@@ -213,12 +234,15 @@ module.exports = {
   createPlayer,
   deletePlayer,
   renamePlayer,
+  recolorPlayer,
   getCampWithAbbr,
   createCamp,
   deleteCamp,
   renameCamp,
   createChar,
   deleteChar,
+  renameChar,
+  recolorChar,
   getCharWithName,
   getCharWithId
 };

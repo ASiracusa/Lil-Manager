@@ -192,6 +192,46 @@ const commandInfo = {
     "function": sf.delchar,
     "description": "Deletes a character from a campaign."
   },
+  "~rnchar": {
+    "syntax": "~rnchar [CAMP ABBR] [CHAR'S NAME] [NEW NAME]",
+    "count": 3,
+    "checks": [
+      {
+        "function": pcheckMaxlen,
+        "params": [1, 10]
+      },
+      {
+        "function": pcheckMaxlen,
+        "params": [2, 17]
+      },
+      {
+        "function": pcheckMaxlen,
+        "params": [3, 17]
+      }
+    ],
+    "function": sf.rnchar,
+    "description": "Renames a registered character in a given campaign."
+  },
+  "~rcchar": {
+    "syntax": "~rcp [CAMP ABBR] [CHAR'S NAME] [NEW HEX CODE]",
+    "count": 3,
+    "checks": [
+      {
+        "function": pcheckMaxlen,
+        "params": [1, 10]
+      },
+      {
+        "function": pcheckMaxlen,
+        "params": [2, 17]
+      },
+      {
+        "function": pcheckHex,
+        "params": [3]
+      }
+    ],
+    "function": sf.rcchar,
+    "description": "Assigns a new color for a registered character in a given campaign to be used during a session."
+  },
   "~lchars": {
     "syntax": "~lchars [CAMPAIGN ABBR]",
     "count": 1,

@@ -32,7 +32,7 @@ async function reset (message, params, db) {
         rolesToModify.push( ["delete", playersData[i].player_role] );
       }
 
-      rolesToModify.push( ["delete", guildData.top_role] );
+      rolesToModify.push( ["delete", guildData.costume_role] );
       rolesToModify.push( ["delete", guildData.players_role] );
       rolesToModify.push( ["delete", guildData.camps_role] );
       rolesToModify.push( ["delete", guildData.gms_role] );
@@ -42,14 +42,14 @@ async function reset (message, params, db) {
     }
 
     message.guild.roles.create({
-      name: "Current Session",
+      name: "Costumes",
       hoist: false
-    }).then((topRole) => {
+    }).then((costumeRole) => {
 
     message.guild.roles.create({
-      name: "Players",
-      hoist: true
-    }).then((playerRole) => {
+      name: "Campaigns",
+      hoist: false
+    }).then((campRole) => {
 
     message.guild.roles.create({
       name: "GMs",
@@ -57,15 +57,15 @@ async function reset (message, params, db) {
     }).then((gmRole) => {
 
     message.guild.roles.create({
-      name: "Campaigns",
-      hoist: false
-    }).then((campRole) => {
+      name: "Players",
+      hoist: true
+    }).then((playerRole) => {
 
-      rolesToModify.push( ["redit", playerRole.id, { position: topRole.position-1 } ] );
-      rolesToModify.push( ["redit", gmRole.id, { position: topRole.position-2 } ] );
-      rolesToModify.push( ["redit", campRole.id, { position: topRole.position-3 } ] );
+      rolesToModify.push( ["redit", campRole.id, { position: costumeRole.position-1 } ] );
+      rolesToModify.push( ["redit", gmRole.id, { position: costumeRole.position-2 } ] );
+      rolesToModify.push( ["redit", playerRole.id, { position: costumeRole.position-3 } ] );
 
-      sd.addGuild(db, gid, topRole.id, playerRole.id, gmRole.id, campRole.id); 
+      sd.addGuild(db, gid, costumeRole.id, playerRole.id, gmRole.id, campRole.id); 
 
       congaLine(message, rolesToModify, 0);
 
@@ -200,13 +200,13 @@ async function register (message, params, db) {
         hoist: false
       }).then((playersRole) => {
         
-        message.guild.roles.fetch(guildData.players_role).then((playerRole) => {
-          rolesToModify.push( ["redit", playersRole.id, { position: playerRole.position-1 } ] );
+        message.guild.roles.fetch(guildData.costume_role).then((costumeRole) => {
+          rolesToModify.push( ["redit", playersRole.id, { position: costumeRole.position-1 } ] );
           rolesToModify.push( ["dedit", playerId, {nick: playerName} ] );
           rolesToModify.push( ["add", guildData.players_role, playerId ] );
           rolesToModify.push( ["add", playersRole.id, playerId ] );
 
-          sd.createPlayer(db, gid, playerId, playerName, playersRole.id);
+          sd.createPlayer(db, gid, playerId, playerName, params[3], playersRole.id);
 
           congaLine(message, rolesToModify, 0);
 
@@ -305,6 +305,7 @@ async function rcp (message, params, db) {
     var playerName = params[1].split("_").join(" ");
     const playerData = await dcheckPlayerName(message, db, gid, playerName, false); if (!playerData) return;
   
+    await sd.recolorPlayer(db, gid, playerData.duser_id, params[2]); 
     message.guild.roles.fetch(playerData.player_role).then((playersRole) => {
       playersRole.edit({ color: params[2] });
     });
@@ -378,25 +379,31 @@ async function addcamp (message, params, db) {
     message.guild.roles.create({
       name: "GM (" + campName + ")",
       color: params[5],
-      hoist: true
+      hoist: false
     }).then((gmsRole) => {
 
       message.guild.roles.fetch(guildData.gms_role).then((gmRole) => {
 
+        gmsRole.setPosition(gmRole.position-1).then(() => {
+
         message.guild.roles.create({
           name: campName,
           color: params[3],
-          hoist: true
+          hoist: false
         }).then((campsRole) => {
 
           message.guild.roles.fetch(guildData.camps_role).then((campRole) => {
 
+            campsRole.setPosition(campRole.position-1).then(() => {
+
             rolesToModify.push( ["add", gmsRole.id, gmData.duser_id ] );
+            // rolesToModify.push( ["rpos", gmsRole.id, gmRole.position-1] );
             rolesToModify.push( ["add", campsRole.id, gmData.duser_id ] );
+            // rolesToModify.push( ["rpos", campsRole.id, campRole.position-1] );
+            
             // rolesToModify.push( ["redit", campsRole.id, { position: campRole.position-1 } ] );
             // rolesToModify.push( ["redit", gmsRole.id, { position: gmRole.position } ] );
-            rolesToModify.push( ["rpos", campsRole.id, campRole.position] );
-            rolesToModify.push( ["rpos", gmsRole.id, gmRole.position-1] );
+            
 
             sd.createCamp(db, gid, campAbbr, campName, gmData.duser_id, campsRole.id, gmsRole.id);
 
@@ -404,7 +411,11 @@ async function addcamp (message, params, db) {
 
             message.channel.send("Created **" + campName + " (" + campAbbr + ")**.");
 
+            });
+
           });
+        });
+
         });
       });
     });
@@ -507,10 +518,10 @@ async function addchar (message, params, db) {
         message.guild.roles.fetch(campData.camp_role).then((campRole) => {
           playerUser.roles.add(charsRole).then(() => {
             playerUser.roles.add(campRole).then(() => {
-              message.guild.roles.fetch(guildData.gms_role).then((gmRole) => {
-                charsRole.edit({ position: gmRole.position });
+              message.guild.roles.fetch(guildData.players_role).then((playerRole) => {
+                charsRole.edit({ position: playerRole.position-1 });
 
-                sd.createChar(db, gid, campData.abbr, playerData.duser_id, charName, charsRole.id);
+                sd.createChar(db, gid, campData.abbr, playerData.duser_id, charName, params[4], charsRole.id);
 
                 message.channel.send("Created **" + charName + "**.");
 
@@ -554,6 +565,66 @@ async function delchar (message, params, db) {
 
   } catch (error) {
     console.error('ERROR IN ~delchar:', error);
+  }
+  
+}
+
+async function rnchar (message, params, db) {
+
+  try {
+
+    var gid = message.guild.id;
+    const guildData = await dcheckGuild(message, db, gid); if (!guildData) return;
+
+    if (!checkRunning(message, guildData, true)) return;
+
+    var campAbbr = params[1].toLowerCase();
+    const campData = await dcheckCampAbbr(message, db, gid, campAbbr, false); if (!campData) return;
+
+    var charName = params[2].split("_").join(" ");
+    const charData = await dcheckCharName(message, db, gid, campAbbr, charName, false); if (!charData) return;
+
+    if (!checkCharRights(message, campData, charData)) return;
+    
+    var newCharName = params[3].split("_").join(" ");
+    await sd.renameChar(db, gid, campAbbr, charData.duser_id, newCharName); 
+    message.guild.roles.fetch(charData.char_role).then((charsRole) => {
+      charsRole.edit({ name: newCharName });
+      message.channel.send("Renamed character to **" + newCharName + "**.");
+    });
+
+  } catch (error) {
+    console.error('ERROR IN ~rnchar:', error);
+  }
+  
+}
+
+async function rcchar (message, params, db) {
+
+  try {
+
+    var gid = message.guild.id;
+    const guildData = await dcheckGuild(message, db, gid); if (!guildData) return;
+
+    if (!checkRunning(message, guildData, true)) return;
+
+    var campAbbr = params[1].toLowerCase();
+    const campData = await dcheckCampAbbr(message, db, gid, campAbbr, false); if (!campData) return;
+
+    var charName = params[2].split("_").join(" ");
+    const charData = await dcheckCharName(message, db, gid, campAbbr, charName, false); if (!charData) return;
+
+    if (!checkCharRights(message, campData, charData)) return;
+  
+    await sd.recolorChar(db, gid, campAbbr, charData.duser_id, params[3]); 
+    message.guild.roles.fetch(charData.char_role).then((charsRole) => {
+      charsRole.edit({ color: params[3] });
+    });
+    
+    message.channel.send("Recolored " + charName + " to **" + params[3] + "**.");
+
+  } catch (error) {
+    console.error('ERROR IN ~rcchar:', error);
   }
   
 }
@@ -716,7 +787,10 @@ async function congaLine (message, modList, i) {
     
   } else if (modList[i][0] === "rpos") {
 
-    message.guild.roles.setPosition(modList[i][1], modList[i][2]).then(nextFunction()).catch(console.error);
+    // message.guild.roles.setPosition(modList[i][1], modList[i][2]).then(nextFunction()).catch(console.error);
+    message.guild.roles.fetch(modList[i][1]).then((role) => {
+      role.setPosition(modList[i][2]).then(nextFunction()).catch(console.error);
+    }).catch(console.error);
     
   } else {
 
@@ -800,5 +874,7 @@ module.exports = {
   lcamps,
   addchar,
   delchar,
+  rnchar,
+  rcchar,
   lchars
 };
