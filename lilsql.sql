@@ -29,6 +29,7 @@ CREATE TABLE Campaigns (
     camp_name VARCHAR(64) NOT NULL,
     gm_duser_id VARCHAR(20) NOT NULL,
     camp_role VARCHAR(20) NOT NULL,
+    gm_color CHAR(7) NOT NULL,
     gm_role VARCHAR(20) NOT NULL,
 
     PRIMARY KEY (guild_id, abbr)

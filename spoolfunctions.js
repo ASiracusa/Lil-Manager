@@ -97,28 +97,20 @@ async function startSession (message, params, db) {
 
     var rolesToModify = [];
 
+    rolesToModify.push( ["redit", campData.camp_role, {hoist: true} ] );
+
     var playerData = await sd.getPlayerWithId(db, gid, campData.gm_duser_id);
-    rolesToModify.push( ["dedit", campData.gm_duser_id, {nick: "GM (" + playerData[0].reg_name + ")"} ] );
+    rolesToModify.push( ["dedit", campData.gm_duser_id, {nick: "(GM) " + playerData[0].reg_name} ] );
+    rolesToModify.push( ["redit", playerData[0].player_role, {color: campData.gm_color} ] );
     for (var i = 0; i < charsData.length; i++) {
       playerData = await sd.getPlayerWithId(db, gid, charsData[i].duser_id);
       rolesToModify.push( ["dedit", charsData[i].duser_id, {nick: charsData[i].char_name + " (" + playerData[0].reg_name + ")"} ] );
+      rolesToModify.push( ["redit", playerData[0].player_role, {color: charsData[i].char_color} ] );
     }
-    
-    message.guild.roles.fetch(guildData.top_role).then((topRole) => {
 
-      var rolePoses = [];
-      rolePoses.push( { role: campData.camp_role, position: topRole.position } );
-      rolePoses.push( { role: campData.gm_role, position: topRole.position } );
-      for (var i = 0; i < charsData.length; i++) {
-        rolePoses.push( { role: charsData[i].char_role, position: topRole.position } );
-      }
-      message.guild.roles.setPositions(rolePoses).then(() => {
-        congaLine(message, rolesToModify, 0);
-      });
+    congaLine(message, rolesToModify, 0);
 
-      message.channel.send("Started **" + campAbbr + "**.");
-
-    });
+    message.channel.send("Started **" + campAbbr + "**.");
 
   } catch (error) {
     console.error('ERROR IN ~start:', error);
@@ -144,30 +136,20 @@ async function endSession (message, params, db) {
 
     var rolesToModify = [];
 
+    rolesToModify.push( ["redit", campData.camp_role, {hoist: false} ] );
+
     var playerData = await sd.getPlayerWithId(db, gid, campData.gm_duser_id);
     rolesToModify.push( ["dedit", campData.gm_duser_id, {nick: playerData[0].reg_name} ] );
+    rolesToModify.push( ["redit", playerData[0].player_role, {color: playerData[0].player_color} ] );
     for (var i = 0; i < charsData.length; i++) {
       playerData = await sd.getPlayerWithId(db, gid, charsData[i].duser_id);
       rolesToModify.push( ["dedit", charsData[i].duser_id, {nick: playerData[0].reg_name} ] );
+      rolesToModify.push( ["redit", playerData[0].player_role, {color: playerData[0].player_color} ] );
     }
     
-    message.guild.roles.fetch(guildData.gms_role).then((gmsRole) => {
-      message.guild.roles.fetch(guildData.camp_role).then((campsRole) => {
+    congaLine(message, rolesToModify, 0);
 
-      var rolePoses = [];
-      rolePoses.push( { role: campData.camp_role, position: campsRole.position } );
-      rolePoses.push( { role: campData.gm_role, position: gmsRole.position } );
-      for (var i = 0; i < charsData.length; i++) {
-        rolePoses.push( { role: charsData[i].char_role, position: gmsRole.position+1 } );
-      }
-      message.guild.roles.setPositions(rolePoses).then(() => {
-        congaLine(message, rolesToModify, 0);
-      });
-
-      message.channel.send("Ended the session.");
-
-      });
-    });
+    message.channel.send("Ended the session.");
 
   } catch (error) {
     console.error('ERROR IN ~end:', error);
@@ -234,6 +216,7 @@ async function unregister (message, params, db) {
     var gid = message.guild.id;
     const guildData = await dcheckGuild(message, db, gid); if (!guildData) return;
 
+    if (!checkOwnerRights(message)) return;
     if (!checkRunning(message, guildData, true)) return;
 
     var playerName = params[1].split("_").join(" ");
@@ -302,6 +285,8 @@ async function rcp (message, params, db) {
     var gid = message.guild.id;
     const guildData = await dcheckGuild(message, db, gid); if (!guildData) return;
 
+    if (!checkRunning(message, guildData, true)) return;
+
     var playerName = params[1].split("_").join(" ");
     const playerData = await dcheckPlayerName(message, db, gid, playerName, false); if (!playerData) return;
   
@@ -331,6 +316,8 @@ async function lp (message, params, db) {
 
     var gid = message.guild.id;
     const guildData = await dcheckGuild(message, db, gid); if (!guildData) return;
+
+    if (!checkOwnerRights(message)) return;
 
     const playersData = await sd.getPlayers(db, gid);
     if (playersData.length === 0) {
@@ -405,7 +392,7 @@ async function addcamp (message, params, db) {
             // rolesToModify.push( ["redit", gmsRole.id, { position: gmRole.position } ] );
             
 
-            sd.createCamp(db, gid, campAbbr, campName, gmData.duser_id, campsRole.id, gmsRole.id);
+            sd.createCamp(db, gid, campAbbr, campName, gmData.duser_id, campsRole.id, params[5], gmsRole.id);
 
             congaLine(message, rolesToModify, 0);
 
@@ -433,6 +420,7 @@ async function delcamp (message, params, db) {
     var gid = message.guild.id;
     const guildData = await dcheckGuild(message, db, gid); if (!guildData) return;
 
+    if (!checkOwnerRights(message)) return;
     if (!checkRunning(message, guildData, true)) return;
 
     var campAbbr = params[1].toLowerCase();
@@ -468,6 +456,8 @@ async function lcamps (message, params, db) {
 
     var gid = message.guild.id;
     const guildData = await dcheckGuild(message, db, gid); if (!guildData) return;
+
+    if (!checkOwnerRights(message)) return;
 
     const campsData = await sd.getCamps(db, gid);
     if (campsData.length === 0) {
@@ -545,6 +535,7 @@ async function delchar (message, params, db) {
     var gid = message.guild.id;
     const guildData = await dcheckGuild(message, db, gid); if (!guildData) return;
 
+    if (!checkOwnerRights(message)) return;
     if (!checkRunning(message, guildData, true)) return;
 
     var campAbbr = params[1].toLowerCase();
@@ -635,6 +626,8 @@ async function lchars (message, params, db) {
 
     var gid = message.guild.id;
     const guildData = await dcheckGuild(message, db, gid); if (!guildData) return;
+
+    if (!checkOwnerRights(message)) return;
 
     var campAbbr = params[1].toLowerCase();
     const campData = await dcheckCampAbbr(message, db, gid, campAbbr, false); if (!campData) return;

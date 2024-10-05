@@ -152,10 +152,10 @@ async function getCampWithAbbr (db, gid, abbr) {
 
 }
 
-async function createCamp (db, gid, abbr, campName, gmid, cRole, gRole) {
+async function createCamp (db, gid, abbr, campName, gmid, cRole, gColor, gRole) {
 
-  const query = 'INSERT INTO Campaigns VALUES (?, ?, ?, ?, ?, ?)';
-  return await queryDB(db, query, [gid, abbr, campName, gmid, cRole, gRole]);
+  const query = 'INSERT INTO Campaigns VALUES (?, ?, ?, ?, ?, ?, ?)';
+  return await queryDB(db, query, [gid, abbr, campName, gmid, cRole, gColor, gRole]);
 
 }
 

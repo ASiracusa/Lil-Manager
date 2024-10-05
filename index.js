@@ -60,8 +60,22 @@ client.on("messageCreate", (message) => {
 
     command["function"](message, params, db_conn);
     
-  }
+  } 
 
 });
 
 client.login(process.env.TOKEN);
+
+setInterval( () => {
+  new Promise((resolve, reject) => {
+    db_conn.query('SELECT * FROM GuildData WHERE guild_id=1', (error, results, fields) => {
+      if (error) {
+        console.log("bogus FAILURE at " + (new Date()).toString());
+        reject(error);
+      } else {
+        console.log("bogus still working at " + (new Date()).toString());
+        resolve(results);
+      }
+    });
+  });
+}, 3600000);

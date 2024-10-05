@@ -34,8 +34,8 @@ const commandInfo = {
     "function": sf.endSession,
     "description": "Ends the currently running campaign."
   },
-  "~register": {
-    "syntax": "~register [PING USER] [NAME TO REGISTER] [HEX CODE]",
+  "~reg": {
+    "syntax": "~reg [PING USER] [NAME TO REGISTER] [HEX CODE]",
     "count": 3,
     "checks": [
       {
@@ -54,8 +54,8 @@ const commandInfo = {
     "function": sf.register,
     "description": "Registers a person in the database with a real name and the color their name will be outside of a session."
   },
-  "~unregister": {
-    "syntax": "~unregister [REGISTERED NAME]",
+  "~unreg": {
+    "syntax": "~unreg [REGISTERED NAME]",
     "count": 1,
     "checks": [
       {
@@ -98,13 +98,13 @@ const commandInfo = {
     "function": sf.rcp,
     "description": "Assigns a new color for a registered person to be used outside of a session."
   },
-  "~lp": {
-    "syntax": "~lp",
-    "count": 0,
-    "checks": [],
-    "function": sf.lp,
-    "description": "Lists everyone and their registered names."
-  },
+  // "~lp": {
+  //   "syntax": "~lp",
+  //   "count": 0,
+  //   "checks": [],
+  //   "function": sf.lp,
+  //   "description": "Lists everyone and their registered names."
+  // },
   "~addcamp": {
     "syntax": "~addcamp [CAMPAIGN NAME] [CAMPAIGN ABBR] [CAMPAIGN'S HEX CODE] [GM'S REGISTERED NAME] [GM'S HEX CODE]",
     "count": 5,
@@ -145,13 +145,13 @@ const commandInfo = {
     "function": sf.delcamp,
     "description": "Deletes a campaign and all of its characters. This command can only be executed by its GM or the server owner."
   },
-  "~lcamps": {
-    "syntax": "~lcamps",
-    "count": 0,
-    "checks": [],
-    "function": sf.lcamps,
-    "description": "Lists all campaigns."
-  },
+  // "~lcamps": {
+  //   "syntax": "~lcamps",
+  //   "count": 0,
+  //   "checks": [],
+  //   "function": sf.lcamps,
+  //   "description": "Lists all campaigns."
+  // },
   "~addchar": {
     "syntax": "~addchar [CAMPAIGN ABBR] [PLAYER'S REGISTERED NAME] [CHARACTER NAME] [HEX CODE]",
     "count": 4,
@@ -232,18 +232,18 @@ const commandInfo = {
     "function": sf.rcchar,
     "description": "Assigns a new color for a registered character in a given campaign to be used during a session."
   },
-  "~lchars": {
-    "syntax": "~lchars [CAMPAIGN ABBR]",
-    "count": 1,
-    "checks": [
-      {
-        "function": pcheckMaxlen,
-        "params": [1, 10]
-      }
-    ],
-    "function": sf.lchars,
-    "description": "Lists all characters and their players for a campaign."
-  },
+  // "~lchars": {
+  //   "syntax": "~lchars [CAMPAIGN ABBR]",
+  //   "count": 1,
+  //   "checks": [
+  //     {
+  //       "function": pcheckMaxlen,
+  //       "params": [1, 10]
+  //     }
+  //   ],
+  //   "function": sf.lchars,
+  //   "description": "Lists all characters and their players for a campaign."
+  // },
 };
 
 function help (message, params, db) {
